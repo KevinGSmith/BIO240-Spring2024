@@ -1,0 +1,151 @@
+---
+title: "BIO 240 Gene Transcript Exploration"
+author: "Kevin G. Smith"
+date: "Sys.Date()"
+output:
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+Before genes can be translated into proteins, DNA must first be transcribed into RNA. The dataset **coding.mrna** contains the length of known protein-coding transcripts (measured in # of base pairs) for a large number of genes. If you'd like an overview or review of transcription and mRNA, the Wikipedia article on mRNA may be helpful: https://en.wikipedia.org/wiki/Messenger_RNA
+
+## Loading the data
+
+If you are working in our Jupyter environment (https://bit.ly/BIO240_RStudio), the **oibiostat** package is already installed and you'll have access to the data for this exercise. If you are working on your own installation of RStudio, then you'll need to download and install the oibiostat package following the instructions on Forum (or, more simply, do this exercise on Jupyter). In R, packages include a custom set of functions and data, and this package includes data that go along with exmaples from our readings in this course.
+
+To make a package usable in an R session, we need to put it in the "library". This just tells R that we're working with this package and need its contents (think of it as loading the package into R's working memory). Even though the package only needs to be installed once, we need to run the **library()** function at the beginning of every session when we'll be using the package, with the package name as an argument, i.e., **library(oibiostat)**.
+
+```{r}
+#Assuming that the package is already installed, this will load the package:
+library(oibiostat)
+```
+
+Packages often have multiple data sets in them. We're going to work with the **coding.mrna** data. Here's how we load it:
+
+```{r}
+data("coding.mrna")
+```
+
+As a sidenote, if you'd like to see all the datasets that are included in R, you can enter the following command. R will then list of of the available datasets, broken up by which package they come from. The "datasets" package is what comes automatically with every installation of R.
+
+```{r}
+data()
+```
+
+## Exploring the **coding.mrna** data
+
+Start with the basics. Use **nrow()**, **head()**, and **summary()** to explore the dataset.
+
+Take some time to digest the results from summary(). How many variables (columns) are there? What information do you have about each variable? What other commands could you use to summarize the different variables? It may also help to use the View() function, which will open a new tab in RStudio. **Note**: as some of you may have discovered, View() only works in RStudio. You cannot knit a document with View() in a code chunk.
+
+```{r}
+#Use this code chunk to explore the coding.mrna dataset
+
+```
+
+### "Trimming" outliers from a dataset
+
+Make a histogram and boxplot for transcript length. When you see them, you'll notice these aren't very informative plots. Why do you think this is?
+
+```{r}
+#Use this code chunk to make your exploratory plots
+
+```
+
+One thing we can do to make the boxplots and histograms more interpretable is to "trim" them. We're going to trim some outliers out of transcript length so we can get a better sense of how large *most* RNA transcripts are.
+
+To trim these data, we're going to use the notation *coding.mrna$transcript_length < a*, which will reference the subset of values (RNA lengths) of *transcript_length* that are less than the value *a*. In the following code, replace "a" with what you think may be a reasonable value to trim the dataset by. What's a reasonable value? Take a look at the boxplot and histogram above and decide where you might want to trim to get rid of most of the outliers. Once you've decided on your trim value (*a*), then you'll use the subset() command, below, to create a trimmed version of **coding.mrna** called **lengths.subset** that only contains data for transcripts with length less than *a*.
+
+Remember our goal here; we want to get rid of most of the large outliers so we can actually see the distribution of the data. So the "a" value you choose for transcript length should eliminate most large outliers, but *not very many datapoints, overall*. We want to preserve most of the distribution of mRNA transcript lengths. This may require a few tries to get right.
+
+
+```{r}
+lengths.subset = subset(coding.mrna, coding.mrna$transcript_length < a) #Don't forget, you are replacing "a" with a value of your choice
+```
+
+Using the trimmed data, now make new plots (hist and boxplot). You may need to go back and adjust your "a" value a few times to get something interpretable.
+
+Once you're happy with your trimmed dataset, see if you can figure out how many data observations you removed from the dataset when you trimmed it.
+
+```{r}
+#How many points did you remove from the dataset?
+
+```
+
+### Taking a random sample of a dataset
+
+In the trimming approach, above, we removed data *nonrandomly* from the dataset. Another way making a large dataset more manageable is to take a smaller, but random sample of the dataset and construct summaries of that smaller sample. If the sample is random, then by definition it should *usually* be representative of the larger sample, and it being smaller will make it more manageable. and perhaps easier to visualize.
+
+Use the following code to construct a random sample that consists of 10% of the original number of transcripts; the sampling is done without replacement, such that a single transcript cannot be chosen more than once.
+
+We'll talk through the different elements of this code in class, but here's a quick overview: Using the **set.seed()** function allows for pseudo-random sampling; that is, a random sample that is actually reproducible. Replace xxxx in the function with four numbers of your choice, then run the code to create transcript.sample, which will be a vector of transcript lengths. This way, anyone who runs this code will get the same exact results, *as long as they use the same four-digit "seed" that you used*.
+
+You'll also need to modify the sample.size code to replace the "???". In this case, our goal is to have your smaller sample (**transcript.sample**) be 10% of the size #of the full dataset.
+
+```{r}
+set.seed(xxxx)
+sample.size = ??? * ??? #Think of it this way: we want 10% of the full dataset, so code this little multiplication problem so that it gives us the number of rows that would be 10% of the dataset.
+transcript.sample = sample(coding.mrna$transcript_length, size = sample.size,
+                           replace = FALSE)
+
+```
+
+Again use **summary()** and make a histogram and boxplot of **transcript.sample** to see the distribution of transcript lengths. Note that we don't need to specify a column, because the only thing we saved in **transcript.sample** was data from the *transcript_length* column from the coding.mrna data frame.
+
+```{r}
+hist()
+boxplot()
+summary()
+
+```
+
+
+Does the sample data more closely resemble the complete version of the data or the trimmed version? What are your thoughts on if, when, and how we should use these two different approaches to creating a smaller sample (trimming and random sampling)?
+
+## Exploring transcript length vs. chromosome
+In this dataset we have data for multiple chromosomes (explore the dataset to see how many chromosomes are represented) We're going to take a look at how length of mRNA transcript varies with chromosome.
+
+In this code we'll use the **"~"** approach to making a comparative boxplot. We read "~" as "as a function of". So if we want to plot a y variable against an x variable, we would use "y ~ X". 
+
+Using "~", make a make a plot that shows boxplots of transcript length (y-axis) as a function of chromosome. We'll do this with the original (large) dataset, **coding.mrna**.
+
+```{r}
+boxplot(??? ~ ???)
+```
+
+Take a moment to consider how much longer it would take to write code to plot each of the chromosomes separately. Hooray for ~!
+
+Which chromosome has the longest mRNA transcripts?
+
+Now we going to see how one of the sex chromosomes, the Y chromosome, compares to another chromosome in terms of how many transcripts come from that chromosome. This is a measure of how many protein-coding genes are on a chromosome. We would expect that the Y chromosome would have fewer genes because the Y chromosome codes for traits associated with male sex.
+
+Using subsetting, create new data object for chromosome 2 and the Y chromosome:
+
+```{r}
+#Chromosome 2:
+chr.2 = subset(coding.mrna, coding.mrna$chromosome_name == 2)
+
+```
+
+
+Note that for numbers, you do not need quotes when using ==, but for characters like Y, you do need to enclose it in quotes)
+
+```{r}
+#Y chromosome
+chr.Y = subset(???)
+
+```
+
+
+Use chr.2 and chr.Y to find out how many transcripts are associated with each chromosome. Do the results confirm what we would predict based on the Y chromosome coding only for sex traits?
+
+
+### Citation ----------------------------------------------------------------
+
+This exercise was modified by Kevin G. Smith from an exercise in our textbook "Introductory Statistics for the Life and Biomedical Sciences", First Edition, Vu and Harrigton, for use in BIO 240 at Davidson College.
+
