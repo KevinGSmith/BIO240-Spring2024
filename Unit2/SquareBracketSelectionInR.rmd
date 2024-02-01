@@ -1,0 +1,57 @@
+---
+title: "Square bracket selection"
+author: "KGS"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+In this document we'll work through a few quick examples to make sure we're all comfortable with different forms of subsetting.
+
+We'll work with the mRNA data, which is when we did selection most recently, using the subset() function.
+
+```{r echo = FALSE}
+library(oibiostat)
+data(coding.mrna)
+```
+
+
+We'll compare the subset() function and a new form of subsetting, called [,] ("square bracket") selection. If we're working with a vector, a vector has only 1 dimension (length) and therefore we need only 1 argument within [] to select something. For example, if we want the second element of "transcript_length", we would only need to specify coding.mrna$transcript_length[2]. Try this out below.
+
+```{r}
+coding.mrna$transcript_length[2]
+
+#We can test this by looking at the head() of the dataset and looking for the
+#second value in transcript_length
+head(coding.mrna)
+```
+
+Notice that we lose all the other data in the dataframe when we do this. We've asked for _only_ transcript length (using $). What if we want all of the data associated with the second element of transcript length? In other words, what if we want the entire second row of data from coding.mrna?
+
+In this case we need to refer to the whole dataset (coding.mrna), which is two-dimensional (rows and columns). This means we would then put two arguments in [,], one for the row (row 2), one for column (all columns). If we want all columns, we simply leave the column argument blank. Remember, in R, dataframe coordinates are in the order [row, column]. Try the following for an example:
+
+```{r}
+coding.mrna[2,]
+```
+
+So we get the whole second row (again, you can confirm this by checking with head() to see the first six rows). Although it's more complicated, we can use this [row, column] notation to only get the second element from the transcript_length column again (i.e, the value 682). transcript_length is the fourth column, so the coordinates would be [2,4]:
+
+```{r}
+coding.mrna[2,4]
+```
+We can use this same approach with a logical statement/question so we can select for certain things, just like when we use subset(). For example, as we saw previously, we can select the entire dataset, but only for one chromosome:
+
+```{r}
+coding.mrna[coding.mrna$chromosome_name == 2,]
+```
+
+This says, "give me all of the coding.mrna data (because we didn't specify a particular column), but only the _rows_ that meet the condition chromosome == 2.
+
+If we want, we can just pull out the transcript_lengths for this one chromosome by specifying the column by name, in quotes:
+
+```{r}
+coding.mrna[coding.mrna$chromosome_name == 2, "transcript_length"]
+```
+
+Just like with subset(), we can also add in multiple conditions into this kind of subsetting to get exactly the data we want. But you can do 95% of what you'll need to do with these most basic steps.
+
+As an overview and recap, just like with anything in R, there are mtultiple ways to subset a dataset. We started with the subset() command because it is more clear and transparent; it's easier to see the logic behind it, which is why we start with subset(). Using [,], on the other hand, is more flexible and maybe more efficient in terms of writing code, but it requires a bit more comfort with how R "sees" and "thinks about" vectors and dataframes. Finally, as a reminder, we need to recognize when your data object is one-dimensional (a vector with a dimension _length_) or two-dimensional (a dataframe with the dimensions _nrow_ and _ncol_).
