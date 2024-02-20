@@ -1,0 +1,135 @@
+---
+title: "Binomial probability in R"
+author: "Kevin G. Smith"
+date: "2/20/2024"
+output: pdf_document
+---
+
+# Binomial probability in R: Overview
+Up until now, we've been calculating the probability of specific outcomes through two different approaches: by using the rules of simple or conditional probability or by simulation in R, using sample(), for(), and if(). Each method produces nearly identical results and we saw, for example, that we have a very consistent distribution of outcomes. For example, almost everyone had the same relative distribution of # of heads out 10 coin flips, and we all calculated about the same number of false positives and similar positive predictive values for mammograms.
+
+As a reminder, here's how we approached coinflips via simulation:
+
+```{r}
+#1000 trials of 10 coin flips
+results = vector("numeric", length = 1000)
+for (i in 1:1000){
+  results[i] = sum(sample(c(0, 1), 10, prob = c(0.5, 0.5), replace = TRUE))
+}
+table(results)
+hist(results)
+```
+
+We see a peak around our expected value of 5 heads (50% of flips are heads). With larger simulation sizes we also see that we can expect to have values as low as 0 or as high as 10, but these are quite rare. If we converted the values in the histogram to proportions, then those would translate into probabilities of seeing the specific outcomes (remember, proportions/percentages can often be interpreted as probabilities).
+
+This distribution will change only if we change the number of "trials" (coin flips) or probability of a "success" (a head). As a result, using simple probability and combinatorics, it's possible to mathematically define the shape of this distribution for any combination of size (# of trials, _n_) and probability of success (flipping a head, _p_). This is how the binomial distribution is calculated, based on the details in the reading that you did for today. As you read, note that this is a __discrete__ distribution, meaning that it can only take a limited number of integer values. We can get 5 or 6 heads, not not any value in between.
+
+## Conditions of binomial probability:
+* There are two possible outcomes ("success" and "failure", defined however we like)
+* The trials are independent (i.e., not conditional on each other; one coin flip does not affect another)
+* p (the probability of a success) does not change from trial to trial
+* We have a fixed total # of trials
+
+First we'll reproduce the coin flip results and then in class we'll work on some biological examples
+
+# Reproducing the coin flip results: distribution
+R has built-in functions for calculating binomial outcomes:
+* dbinom() for calculating the probability "density", which is the amount of probability space under a particular part of the distribution
+* pbinom() for calculating "tail" probabilities, which is how much of the probability exists above or below a specific value.
+* rbinom() which we can use to draw random numbers from a specific probability distribution.
+
+We'll start by plotting the distribution of probabilities for our original coin flip scenario, in which p = 0.5 and n = 10 (flips):
+
+```{r}
+ten.flips = dbinom(x = 0:10, size = 10, p = 0.5)
+barplot(ten.flips, names.arg = c(0:10), xlab = "# of heads expected",
+        ylab = "Probability of outcome", ylim = c(0, 0.3))
+```
+
+How is the above code leading to the same barpot that we've seen before? In class we'll work through the arguments, but don't forget that you can use ?dbinom() to get some more info about the function.
+
+# Reproducing the coin flip results: probability of specific outcomes
+Notice that above we're asking for all possible outcomes (x = 0:10; this is telling R to use all values from 0 to 10, sort of like a loop) so we can plot the distribution. If we wanted to know the specific probability of an outcome, however, we could ask just for that outcome:
+
+```{r}
+#Probability of 2 heads:
+dbinom(x = 2, size = 10, p = 0.5)
+```
+This was the same probability that I calculated in class a few class sessions ago using the rules of probability: (0.5^10) * 45 (different ways of getting 2 heads)
+
+Or we could look at the entire distribution of probabilities:
+
+```{r}
+ten.flips = dbinom(x = 0:10, size = 10, p = 0.5)
+ten.flips
+```
+
+We can also use : or c(), in combination with sum(), to ask for the total probability in a range of outcomes:
+```{r}
+four.to.six = sum(dbinom(4:6, 10, 0.5))
+four.to.six
+barplot(ten.flips, names.arg = c(0:10), xlab = "# of heads expected",
+        ylab = "Probability of outcome", ylim = c(0, 0.3), 
+        col = c(rep("white", times = 4), rep("red", times = 3)),
+        main = paste("Probability of 4, 5, or 6 heads out of 10 flips (red) =", four.to.six))
+```
+
+# Reproducing the coin flip results: tail probabilities
+
+Soon when we get into significance testing, we'll be calculating "tail probabilities", which tell us how likely it is that we'd see a result *as extreme or more extreme than the result we observed*. This is at the heart of hypothesis testing, ("significance testing") and when we see a tail probability that's < 0.05, we generally consider it a statistically improbable result. We'll talk MUCH more about this later, but for now we can use this as a way to think about coin-flip results.
+
+Suppose we have a coin that we suspect may be biased toward producing heads. We ask someone to flip the coin 10 times, we count the number of heads across the 10 flips, and we find that the coin came up heads 9 times. What's the probability of seeing an outcome this extreme or more extreme? In this case we use pbinom(), with very similar arguments as dbinom(), but including a __q value__ which defines the outcome that we're testing:
+
+```{r}
+nine.or.more = pbinom(q = 8, size = 10, prob = 0.5, lower.tail = FALSE)
+barplot(ten.flips, names.arg = c(0:10), xlab = "# of heads expected",
+        ylab = "Probability of outcome", ylim = c(0, 0.3), 
+        col = c(rep("white", times = 9), rep("red", times = 2)),
+        main = paste("Probability of 9 or more heads out of 10 flips (red) =",
+                     nine.or.more))
+
+sum(dbinom(9:10, 10, 0.5))
+```
+
+
+A few things to notice about this:
+
+__First, notice the q value in the pbinom() statement.__ We enter in the value 8 because pbinom() looks _above_ that value, not inclusive. However, if we were looking _below_ that value, it would be inclusive of 8. This is a little confusing, but it makes sense because we can't have a value included in both tails. See the following code for an example:
+
+```{r}
+#Lower tail, looking only at the probability of getting zero heads:
+pbinom(q = 0, size = 10, prob = 0.5, lower.tail = TRUE)
+
+#Upper tail, but starting at 1 head:
+pbinom(q = 0, size = 10, prob = 0.5, lower.tail = FALSE)
+
+#This confirms that R is not double-counting the probability of zero heads, 
+#because the probability sums to 1, and not more than 1:
+pbinom(q = 0, size = 10, prob = 0.5, lower.tail = TRUE) + 
+  pbinom(q = 0, size = 10, prob = 0.5, lower.tail = FALSE)
+
+#We can confirm this another way: This will equal 1, which means that pbinom()
+#is looking LEFT (lower tail), including 10:
+pbinom(q = 10, size = 10, prob = 0.5, lower.tail = TRUE)
+
+#And this will equal zero, because pbinom() is looking RIGHT (upper tail), but
+#not including 10 (or anything):
+pbinom(q = 10, size = 10, prob = 0.5, lower.tail = FALSE)
+```
+So in summary, when we're going UP from a value, the q-value is _not_ included in the interval. When we're going DOWN from a value, it _is_ included in the interval.
+
+Second, based on a scientific standard of < 0.05 probability being an unlikely event under random circumstances, in this case we would have a very strong suspicion that the coin we're flipping isn't fair. As easy way to test this would be to repeat this "experiment" a second time, but for now, even the knowledge that there's ~ 0.01 probability of randomly getting 9 heads in 10 coin flips would make us suspicious of the coin. Even though we know that this could, theoretically, happen randomly.
+
+Third, we could very easily do this same thing with dbinom(), However, as we get into continuous distributions, which have an infinite number of intervals, we would have to use this p method (a tail probability function) for calculating tail probabilities and not d (probability density). We'll talk about this more later.
+
+# Quick practice:
+We'll get to some more detailed applications of the binomial distribution in class, but here's a quick question for you to work on to give yourself some practice with these functions:
+
+The National Vaccine Information Center estimates that historically (prior to the advent of the vaccine), 90% of Americans would have had chickenpox by the time they reach adulthood. Suppose that a study is being conducted, and the study requires having 10 people who have had chickenpox. 20 people were recruited for the study. What is the probability that at least 10 of them have had chickenpox?
+
+Use the examples above as guides and see if you can calculate this probability using one of the binom functions.
+
+```{r}
+
+```
+
