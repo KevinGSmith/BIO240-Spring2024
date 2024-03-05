@@ -1,0 +1,136 @@
+---
+title: "Yeast sample size"
+author: "Kevin G. Smith"
+date: "r Sys.Date()"
+output: pdf_document
+---
+
+## The Question:
+Suppose that a mutation of interest (we’ll say “Mutation A”) occurs in 20% of laboratory yeast cultures. If we need a yeast culture with Mutation A, how many cultures of yeast should we order to give us at least a 95% probability that we'll have at least one culture with Mutation A?
+
+Try this approach two different ways, please:
+
+Using dbinom()
+Using pbinom()
+
+
+## Some solutions:
+First I'll make a plot so that we can visualize what we're trying to calculate. I'll first show a plot that we might make just to explore how we can solve this problem. Let's say that we'll order 50 yeast cultures; will this give us at least a 95% probability of getting at least one culture with Mutation A?
+
+To help us with this question I'm also going to add a horizontal line at 0.05 probability; I"ll explain why later.
+
+```{r}
+barplot(dbinom(0:50, 50, 0.2), names.arg = c(0:50), 
+        xlab = "# of cultures with Mutation A",
+        ylab = "Probability",
+        main = "Probability of different outcomes given 50 yeast cultures")
+abline(h = 0.05, col = "darkred", lwd = 2)
+```
+Let's think about what we see above. Basically, any outcome other than an outcome of 0 (no yeast cultures with Mutation A) is a good outcome. And if we add up the probability of all of those nonzero outcomes, then we can find out if we have at least a 95% chance of getting NOT ZERO cultures with Mutation A. This is an important mental trick: P(>=1) = P(!0) (not zero).
+
+Summing the probability of >=1 culture with Mutation A:
+```{r}
+sum(dbinom(x = 1:50, size = 50, prob = 0.2))
+```
+OK, wow, so yes, clearly 50 cultures is enough, because this value is well over 0.95. Now our challenge is to find out the minimum number that we need to order for this probability to be >= 0.95, right?
+
+Now that we know that we need <50 cultures, lets try to automate the process of finding the number we need to order. I'm going to do this by asking for the probability of getting 0 cultures with Mutation A, for the cases where we order anywhere between 1:50 cultures. Remember, if we want P(>=1) to be at least 0.95, then we want P(0) < 0.05.
+```{r}
+dbinom(x = 0, size = 1:50, prob = 0.2)
+```
+
+Now I'll do the same thing, but I'll ask R when is the probability of getting zero cultures < 0.05?
+```{r}
+dbinom(x = 0, size = 1:50, prob = 0.2) < 0.05
+```
+
+Now I'll just automate this a little bit. Notice how I'm getting which() and min() to work together to give me a quick answer:
+```{r}
+min(which(dbinom(x = 0, size = 1:50, prob = 0.2) < 0.05))
+```
+
+Here's another way to approach it with some trial and error, but using pbinom() this time.
+
+Remember that we want everything to the _right_ of 0 (>= 1 culture with Mutation A) to have at least 95% probability. Start by thinking about what we expect given the probability value of p = 0.2. This means that if we have 50 cultures, then we should expect to have 10 with Mutation A. So we know we won't need as many as 50 cultures. If we go down to 20 cultures, then that means we should expect, on average, to get 4 with Mutation A. So maybe this is a good place to start?
+
+Let's first visualize 20 cultures:
+```{r}
+barplot(dbinom(0:20, 20, 0.2), names.arg = c(0:20), 
+        col = c("Red", c(rep("Gray", times = 21))),
+        xlab = "# of cultures with Mutation A",
+        ylab = "Probability",
+        main = "Probability of different outcomes given 20 yeast cultures")
+
+
+pbinom(0, size = 20, prob = 0.2, lower.tail = FALSE)
+```
+The above is telling us that we probably don't need as many as 20 cultures: If we order 20, we have a probability of 0.988 of getting >= 1 Mutation A. This is great, but we'd be wasting money. How few cultures can we order and have a 95% chance of getting Mutation A? So let's work down from 20.
+
+```{r}
+pbinom(0, size = 1:20, prob = 0.2, lower.tail = FALSE)
+#What are the probabilities of getting one or more culture of interest when we
+#order, 1, 2, 3, ... or 20 cultures?
+```
+The above helps us quite a bit now. If we work backward from 20, we can see that at 13 cultures (13th number in the list that prints out) we dip below the 95% probability that we're after. Again using some code we can have R do the work for us:
+
+```{r}
+min(which(pbinom(0, size = 1:20, prob = 0.2, lower.tail = FALSE) >= 0.95))
+#This is asking, which of the probabilities is at least 0.95 for all sample
+#sizes between 0 and 20? We want the min(), because we want to order the
+#smallest of cultures to meet our goal.
+```
+Remember, this is giving us the _index value_, which means that the 14th item in the vector meets our criteria. In this case we started at 1 cultures (1:20), so the 14th item is 14 cultures. Yay!
+
+Other approaches would work here, as well, including a simulation approach using for() loops (see below). But the above solutions require very little code and are based on thinking through the logic after a little bit of guess-and-check work.
+
+Below we'll see that there are other approaches, using for() loops and a different kind of loop that we haven't used in class, a while() loop.
+
+## Other approaches:
+# for() loop
+```{r}
+Max.cultures = 50
+Size = vector(mode = "numeric", length = Max.cultures)
+Prob = vector(mode = "numeric", length = Max.cultures)
+#I'm starting with 50 because again, I doubt we'll need more than that, but we can
+#easily change this if we need to.
+
+for (i in 1:Max.cultures) {
+  Size[i] = i  
+  Prob[i] = sum(dbinom(x = 1:i, size = i, prob = 0.20))
+}
+#The above loop is saying, "For every order size between 1 and Max.cultures,
+#save the size (# of of cultures) in Size[], then save in Prob[] the probability
+#of getting at least one culture of interest in that order size.
+cbind(Size, Prob)
+
+```
+In the above, the cbind() step allows us to directly compare the number of cultures we ordered ("Size") and the probability that we'll get >=1 culture of interest ("Prob"). And in the above we can see that when we get to Size = 14, Prob > 0.95.
+
+# while() loop
+A while() loop is a different kind of for() loop. while() runs an expression as long as (i.e., while) some condition is met. Once the condition is no longer met, the loop stops. This is a very effective way to address our question:
+```{r}
+i = 1
+#Set our starting size at 1 culture
+
+while (pbinom(q = 0, size = i, prob = 0.20, lower.tail = FALSE) < 0.95) 
+#as long as the probability of getting >=1 culture of interest is less than 0.95
+  {
+  i = i + 1
+}
+#Increase size (# of cultures) by 1
+
+i
+#Once we exceed a probability of 0.95, the while() loop is broken and R prints
+#the most recent i value to show how many cultures we should order
+
+```
+
+Finally, here's an illustration of what we learned from the correct answer: If we order 14 cultures, we just barely have a 95% chance of getting at least one Mutation A, and < 5% chance of getting zero with Mutation A. Red will be showing the outcome we don't wan, and we can see that the red bar is just under 0.05.
+
+```{r}
+barplot(dbinom(0:14, 14, 0.2), names.arg = c(0:14), 
+        col = c("Red", c(rep("Gray", times = 14))),
+        xlab = "# of cultures with Mutation A",
+        ylab = "Probability",
+        main = "Probability of different outcomes given 14 yeast cultures")
+```

@@ -1,0 +1,132 @@
+---
+title: "Normal probability calculations in R (pnorm)"
+author: "Kevin G. Smith"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+## The Standard Normal Distribution
+
+As you saw in the reading about the normal distribution and as we discussed in class, there are many normal distributions. Just like there are different binomial distributions, based on the parameters p (probability) and n (size, or # of observations), there are different normal distributions, based on the parameters mean(x) and sd(x). In other words, the mean and standard deviation of a normal variable fully define the shape of the normal distribution.
+
+By definition, a standard normal distribution has a mean = 0 and a standard deviation (sd) = 1. We standardize data by converting each data point into the number of standard deviations it is from the mean.These are the "z-values" that you read about and that we started working on in class. A z-value of 1 means that the corresponding data point is 1 SD away from the mean.
+
+What we want to be doing with distributions is pulling probabilities from them. This is what we did with the binomial distribution, by using pbinom() and dbinom(). With the normal distribution, we have the pnorm() function to provide probabilities for normally distributed variables. The particular mean and SD can be specified, but if they are not specified, R assumes a standard normal distribution (mean = 0 and SD = 1)--this this the default.
+
+The pnorm() function provides the probability P(<x) (where "x" is a value on the normal curve) by default. If "lower.tail = FALSE" is specified, "pnorm" provides the P(>x). In a real example, we might ask for the probability that someone will be < 65 inches tall, given a distribution of height. Unlike the binomial distribution, we don't have to worry about using <= or >= and onle need to use < or >. This is because there is no valid P(=x), which is a key difference from the binomial distribution. We'll talk about this point in class.
+
+*Note: I'll be referring to "x" values in this document quite a bit because we think of values on x-axis of a distribution this way, but note that in functions like pnorm(), these values are technically called "q" values. You'll see this in the code examples below.*
+
+As usual, it helps to look at a plot. Run the following code to produce a normal distribution and work through how the code is working:
+
+```{r}
+x.values = seq(-4,4, length = 1000)
+#Create a sequence of values between -4 and 4 that is 1000 values long. This
+#gives us our x-axis values.
+
+y.values = dnorm(x.values)
+#This is getting the probability "density" at any given value. These are not
+#true probabilities, but are relative probabilities. We'll be using these values
+#as the y-axis values.
+
+#This plots the x and y values and does some labelling.
+plot(x.values, y.values, type="l", lty=1, xlab="Z value (# of sds from the mean)",
+ylab="Probability", main="Standard Normal Distribution")
+
+```
+
+
+Now, just like in the past with pbinom() or dbinom(), we can ask how much of the curve falls below (or above) a particular value. In this case we'll ask about the value 0, since the answer should be intuitive (right?). Given the above plot, what is the probability of an observation occurring below 0?
+
+
+```{r}
+pnorm(q = 0, lower.tail = TRUE)
+```
+This makes sense; in a standard normal distribution with a mean = 0, we know the distribution is symmetrical and centered around the mean, so 0 should split the probability of the whole distribution (the whole area under the curve) in half, with 50% above and 50% below 0.
+
+Notice that we can eliminate the "lower.tail" statement and get the same answer because the lower tail calculation is the default. Notice also that we're not giving "mean = " or "sd = " because the default is a standard normal curve with mean = 0 and sd = 1.
+
+```{r}
+pnorm(q = 0)
+```
+Same result: P(<0) = 0.5.
+
+## Probabilities associated with values < or > z
+Time to go back to the empirical rule. Remember, the empirical rule says that about 68% of observations will be within 1 sd of the mean and about 95% are within 2 sd.
+
+The actual value is that 95% of the observations should fall within 1.96 sd of the mean. We often are interested in the central 95% of a distribution, so in the examples below, we'll use z values of + 1.96 and -1.96. These values will mark off the upper and lower 2.5% of the standard normal distribution, approximately. 
+
+Please run this line of code:
+```{r}
+pnorm(q = 1.96, lower.tail=TRUE)
+```
+The answer tells us what the empirical rule says: 97.5% of the normal distribution occurs below the z-value of 1.96. It will be helpful to visualize this, so let's add a line to our plot of the standard normal curve:
+
+```{r}
+plot(x.values, y.values, type="l", lty=1, xlab="Z value (# of sds from the mean)",
+ylab="Probability", main="Standard Normal Distribution")
+
+#Add a vertical line at 1.96
+abline(v = 1.96)
+
+```
+
+97.5% of the probability distribution falls to the left of this vertical line, 0.025 to the right.
+
+Below, we'll see that 2.5% of the distribution lies above the z-value of 1.96. As with the binomial distribution, these percentages translate to probabilities of getting outcomes in different regions of the distribution.
+
+```{r}
+pnorm(q = 1.96,lower.tail = FALSE)
+```
+This should confirm for you that pnorm() gives you the prob (<x) if you use lower.tail=TRUE and that pnorm with lower.tail=FALSE gives you prob (>x)
+
+What does the following code imply about the probability of getting a single exact value of x? Run the following code to see what I'm getting at here:
+
+```{r}
+pnorm(q = 1.96, lower.tail=TRUE) + pnorm(1.96,lower.tail = FALSE)
+#Probability below 1.96 + probability above 1.96
+```
+This gives you a value of 1, i.e., 100% probability. So we just added P(<1.96) to P(>1.96) and we got 1, which means that P(x = 1.96) must be zero. If you've taken calculus recently this should make sense. We'll discuss this briefly in class because this is an important conceptual difference between the normal distribution and discrete distributions like the binomial. In short, *the probability of getting any exact specific value from a normal distribution is zero*.
+
+## Finding the z-value associated with particular probabilities
+
+In the above, we calculated probabilities from z-values using pnorm(). We can also do the reverse; we can ask R for the z-value that would be associated with a particular probability. In other words, thinking of our triathlete example, how much beyond average would someone's performance have to be for them to be in the top 5% of triathletes?
+
+For this kind of question we would use a new type of function, qnorm(). (If you're curious, yes, there's also a qbinom() that we didn't use.)
+
+So, repeating the info we have for the triathlete example:
+
+Triathlete 2 (woman, 28 years old): finish time of 5513
+
+Age group statistics: mean finish time  = 5261, sd = 807
+
+Using qnorm(), we can find out how fast someone would have to be to be in the top 5% of women in this age group:
+```{r}
+qnorm(p = 0.05, mean = 5261, sd = 807, lower.tail = TRUE)
+```
+Notice here that I'm asking for the 5%ile, because the "top 5%" of triathletes have to be in the _bottom_ 5% of times (faster = smaller time).
+
+And we see that they'd have to be 1328 seconds faster (5261 - 3933) than the mean time to be in the top 5%, finishing with a time of 3933. We can then confirm that this is in the top 5% of times using pnorm():
+
+```{r}
+pnorm(q = 3933, mean = 5261, sd = 807, lower.tail = TRUE)
+```
+
+Finally, to visualize this:
+
+```{r}
+x.values = seq(2000, 9000, length = 1000)
+y.values = dnorm(x.values, mean = 5261, sd = 807)
+plot(x.values, y.values, type="l", lty=1, xlab="Triathlon time",
+ylab="Probability density")
+abline(v = qnorm(p = 0.05, mean = 5261, sd = 807, lower.tail = TRUE))
+```
+Where the top 5% of performances are to the left of the line.
+
+This was just a quick run-through of a few functions that we'll get more practice with in class. Here are some key things to take away from this:
+
+*Make a plot to help visualize what you're trying to calculate (hand-drawn is fine!)
+*pnorm() will give us the probability of getting a value more or less extreme than an observed value
+*qnorm() is the opposite of pnorm() and will tell us the data value (q) associated with a particular percentile or probability
+*The question we are asking will determine whether we want to use pnorm() or qnorm(), and we'll work through how we match the question with the function in class.
+
