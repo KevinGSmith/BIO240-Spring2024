@@ -1,0 +1,91 @@
+---
+title: "Assessing data for normality"
+author: "Kevin G. Smith"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+## Assessing normality of variables
+As you saw in part of the reading on the normal distribution, we have a few different methods for assessing whether variables are (approximately) normally distributed or not. One method that we've been using already is eyeballing histograms for a subjective assessment of normality. That is a valid and appropriate approach. But as we saw in the reading, there's also a different kind of plot that can help us: a normal probability plot, sometimes called a QQPlot. In this document we'll take a look at how to produce some of these plots. I'll then ask you to explore some variables from datasets that we've been working with the assess their normality.
+
+We'll start with a variable that we know is not normally distributed, as this will help us interpret the normal probability plots. We'll look at cdc$age.
+```{r}
+source("http://www.openintro.org/stat/data/cdc.R")
+hist(cdc$age)
+#Make a histogram
+
+qqnorm(cdc$age, pch = 1)
+qqline(cdc$age, col = "steelblue", lwd = 2)
+#Make a normal probability plot
+
+#Add a horizontal line at the mean:
+abline(h = mean(cdc$age), col = "red")
+
+```
+
+From the reading we know that a perfectly normal dataset will follow the diagonal (steelblue) line in the QQplot, and deviations from the line mean deviations from normality. But how do we interpret the deviations? This is where looking at a lot of histograms helps. In the histogram we see that we have a very short tail on the left (the youngest people aren't as young as we would expect in a normal distribution).
+
+In the QQplot, we can see this information in a different way. The red line is the mean of the data; notice that it and the blue line intersect at 0 on the x-axis. The blue line shows how the data would appear on this plot if the data were normally distributed. The datapoints--the hollow circles--show how the data are *actually* distributed, and any large deviation from the blue line suggests a deviation from normality.
+
+In the lower left of the qqplot, we see datapoints are above the blue line, i.e., they are closer to the mean of the dataset (the red line) than we would expect. This means that the youngest people in the dataset are older (closer to the mean age) than we would expect in a normal distribution. The datapoints in the upper right suggest something similar; the oldest people in the dataset aren't as old as we would expect, because those datapoints are below the blue line, meaning they are closer to the mean of the dataset than expected. This is a short-tailed distribution--the tails aren't as long as they would be in a normal distribution--but the left-hand tail is particularly short. Presumably this is because in this dataset they didn't include anyone below 18 years of age.
+
+We'll look at another example that is normally distributed this time. In this case I'll sample from a standard normal distribution using rnorm(). The means we *know* the data are coming from a normal distribution. This parallels an example used in the reading (Example 3.30).
+
+```{r}
+set.seed(1621)
+norm.1 = rnorm(100)
+hist(norm.1)
+qqnorm(norm.1, pch = 1)
+qqline(norm.1, col = "steelblue", lwd = 2)
+
+```
+
+Note that I'm using set.seed() so I know that you are seeing the same data that I am.
+
+Notice that the histogram already looks a little wonky and maybe non-normal. The QQplot is a little suspicious, with some deviations from normality in several different parts of the plot, including a small amount of deviation toward the tails. But we *know* that these data are from a normal distribution. Hmm.
+
+What if we took a larger sample?
+
+```{r}
+set.seed(1621)
+norm.2 = rnorm(1000)
+hist(norm.2)
+qqnorm(norm.2, pch = 1)
+qqline(norm.2, col = "steelblue", lwd = 2)
+
+```
+Everything about these data looks better. The histogram is symmetrical and the QQplot looks about as good as one that we'll ever see. But notice that we still have some outlier datapoints, even in this normal distribution--this is totally normal and part of the reason I talk about data being "normalish". Most real data, and even these simulated data, will never *perfectly* reflect a normal distribution.
+
+## Some take-aways
+* We should always expect some deviations from the appearance of normality, even in truly normal variables. These deviations become more significant with smaller sample sizes. Minor deviations are not a big deal, as long as the distribution is relatively symmetrical.
+* Knowledge of the variable is important. There are certain variables that we know *should* be normally distributed. We'll talk more about this in class, but any variable that is the result of the summing or averaging of many different things will generally be normally distributed. Height is usually considered one such variable, because it is the culmination of many genes and many environmental factors. Usually, this kind of knowledge would override concerns about data looking like they are not normally distributed (but not always).
+* In practice, especially when making inferences about groups or populations (and not individuals), we don't need to worry too much about normality because we are looking at averages, which are almost always normally distributed. This principle is called the *Central Limit Theorem* and we'll be working with this principle soon.
+* However, when we are making inferences about individuals (e.g., the probability that an individual will be hypertensive or be of a certain height, or when we're using the empirical (68-95-99.7) rule, we should be more cautious because these kinds of calculations rely on normality and symmetry.
+
+This is probably a little confusing and disconcerting, because it means that assessing normality has some subjectivity baked into it. This is true. We will work through this and discuss this in class together.
+
+## An exercise.
+Using some of the data that we've used in class and a few other datasets, linked below, choose two different numerical variables that are (arguably) continuous (not categorical). Use histograms and qqplots (using the code in this document) to assess normality. Write a brief (1-2 sentence) explanation for each data set explaining a) if the data look like they are normal and b) if you think the data *should* be normal.
+
+# Code block with datasets for you:
+```{r}
+babies = read.csv("https://docs.google.com/spreadsheets/d/e/2PACX-1vSA2koREmUv7-umdewK0BDL5SJPSqUW0vuhsIisIB_edbQ1QoSwlcY4kwvsifbKiziePL-JYumhvJd3/pub?gid=0&single=true&output=csv")
+
+source("http://www.openintro.org/stat/data/cdc.R")
+
+library(oibiostat)
+
+data("coding.mrna")
+
+data("famuss")
+
+data("nhanes.samp.adult.500")
+
+```
+
+# Explore two different numerical variables below and assess their normality
+
+```{r}
+
+```
+
